@@ -3,23 +3,24 @@ const filterRarity = document.getElementById("filter-rarity");
 const filterOwned = document.getElementById("filter-owned");
 const sortBy = document.getElementById("sort-by");
 
-const API_BASE_URL = "https://bstests.leogib.fr";
+const API_BASE_URL = "http://localhost:3000";
 const USER_ROUTE_BASES = ["/user"];
 const TOKEN_STORAGE_KEYS = ["brainrot_token", "token", "auth_token", "jwt_token", "jwt"];
 
 const RARITY_ORDER = [
     "commun",
-    "peu commun",
+    "peu-commun",
     "rare",
-    "très rare",
-    "légendaire",
-    "épique",
+    "tres-rare",
+    "legendaire",
+    "epique",
     "mythique",
     "ultime",
     "divin",
     "secret",
     "ancestral",
-    "éternel"
+    "eternel",
+    "STI"
 ];
 
 let allBrainrots = [];
@@ -117,9 +118,12 @@ function getRarityColor(rarity) {
 }
 
 function getRarityIndex(rarity) {
-    const normalized = (rarity || "").toLowerCase().replace(/-/g, " ");
-    const index = RARITY_ORDER.indexOf(normalized);
-    return index === -1 ? RARITY_ORDER.length : index;
+    const raw = rarity || "";
+    const index = RARITY_ORDER.indexOf(raw);
+    if (index !== -1) return index;
+    const normalized = raw.toLowerCase().replace(/[àâä]/g, "a").replace(/[éèêë]/g, "e").replace(/\s+/g, "-");
+    const indexNorm = RARITY_ORDER.indexOf(normalized);
+    return indexNorm === -1 ? RARITY_ORDER.length : indexNorm;
 }
 
 function formatCompact(value) {

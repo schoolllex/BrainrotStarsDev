@@ -2,12 +2,104 @@ const currentPseudoDisplay = document.getElementById("current-pseudo");
 const updatePseudoForm = document.getElementById("update-pseudo-form");
 const newPseudoInput = document.getElementById("new-pseudo-input");
 const profileFeedback = document.getElementById("profile-feedback");
-const API_BASE_URL = "https://bstests.leogib.fr";
+const API_BASE_URL = "http://localhost:3000";
 
 let pollingInterval = null;
 
 async function getAuthToken() {
     return await window.BrainrotAuth.waitUntilReady();
+}
+
+function generateUUID() {
+    // Générer un UUID v4 valide côté client
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+async function challengeFriend(friendPseudo, friendId) {
+    try {
+        const token = await getAuthToken();
+        if (!token) throw new Error("Non authentifié");
+        
+        // Générer un UUID UNIQUE pour cette room de défi
+        const roomId = generateUUID();
+        
+        // Récupérer les cartes disponibles du joueur
+        let selectedCards = [];
+        try {
+            const res = await fetch(`${API_BASE_URL}/game/getCard?token=${token}`, {
+                method: 'GET'
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const availableCards = Array.isArray(data.result) ? data.result : [];
+                // Créer un deck de 10 cartes
+                selectedCards = availableCards.slice(0, 10).map((card, idx) => ({
+                    cardId: (card.name ? card.name.replace(/\s+/g, '_') : ('card_' + idx)) + '_' + idx,
+                    quantity: 1,
+                    card: card
+                }));
+            }
+        } catch (e) {
+            console.log("Impossible de récupérer les cartes:", e);
+        }
+        
+        // Si pas assez de cartes, utiliser un deck fictif
+        if (selectedCards.length < 10) {
+            const defaultCards = [
+                { name: 'Fireball', cost: 4, type: 'spell', emoji: '🔥', damage: 5 },
+                { name: 'Meteor', cost: 5, type: 'spell', emoji: '☄️', damage: 7 },
+                { name: 'Bear', cost: 3, type: 'unit', emoji: '🐻', hp: 6, dmg: 2 },
+                { name: 'Goblin', cost: 2, type: 'unit', emoji: '🦊', hp: 3, dmg: 1 },
+                { name: 'Knight', cost: 3, type: 'unit', emoji: '⚔️', hp: 5, dmg: 2 },
+                { name: 'Archer', cost: 2, type: 'unit', emoji: '🏹', hp: 3, dmg: 2 },
+                { name: 'Dragon', cost: 7, type: 'unit', emoji: '🐲', hp: 10, dmg: 4 },
+                { name: 'Mage', cost: 4, type: 'unit', emoji: '🪄', hp: 4, dmg: 3 },
+                { name: 'Bomber', cost: 4, type: 'unit', emoji: '💣', hp: 5, dmg: 4 },
+                { name: 'Frost', cost: 3, type: 'spell', emoji: '❄️', damage: 2 }
+            ];
+            while (selectedCards.length < 10) {
+                const randomCard = defaultCards[Math.floor(Math.random() * defaultCards.length)];
+                selectedCards.push({
+                    cardId: `${randomCard.name}_${selectedCards.length}`,
+                    quantity: 1,
+                    card: randomCard
+                });
+            }
+        }
+        
+        // Appeler /game/join AVEC le roomId généré (garantit une nouvelle room)
+        const res = await fetch(`${API_BASE_URL}/game/join`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                roomId: roomId,              // UUID unique généré en frontend
+                selectedCards: selectedCards,  // Cartes pour le deck
+                enemieId: friendId           // Pour notifier l'ami
+            })
+        });
+        
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: 'join failed' }));
+            throw new Error(err.error || 'Impossible de créer le défi');
+        }
+        
+        const data = await res.json();
+        console.log(`🎮 Défi lancé contre ${friendPseudo} - Room: ${roomId}`);
+        
+        // Rediriger vers le jeu avec le roomId
+        window.location.href = `../game/game.html?room=${roomId}`;
+
+    } catch (error) {
+        console.error('❌ Erreur lors du défi:', error);
+        alert(`❌ Impossible de défier ${friendPseudo}: ${error.message}`);
+    }
 }
 
 async function fetchUserStats(token) {
@@ -289,8 +381,8 @@ function renderFriendsList(friends) {
     }
 
     friends.forEach(friend => {
-        const pseudo = friend.user?.pseudo || "Utilisateur inconnu";
-        const friendId = friend.user?.id || friend.id;
+        const pseudo = friend.friend?.pseudo || friend.user?.pseudo || "Utilisateur inconnu";
+        const friendId = friend.friend?.id || friend.user?.id || friend.friendId || friend.id;
 
         const friendRow = document.createElement("article");
         friendRow.className = "friend-row";
@@ -300,7 +392,7 @@ function renderFriendsList(friends) {
                 <strong>${pseudo}</strong>
             </div>
             <div class="friend-actions">
-                <button type="button" class="disabled-action challenge-btn">Défier</button>
+                <button type="button" class="challenge-btn" data-friend-id="${friendId}" data-friend-pseudo="${pseudo}">⚔️ Défier</button>
                 <button type="button" class="delete-friend-btn" title="Supprimer cet ami" data-friend-id="${friendId}">
                     <i data-lucide="trash-2"></i>
                 </button>
@@ -308,6 +400,13 @@ function renderFriendsList(friends) {
         `;
 
         friendsList.appendChild(friendRow);
+
+        const challengeBtn = friendRow.querySelector(".challenge-btn");
+        challengeBtn.addEventListener("click", async () => {
+            challengeBtn.disabled = true;
+            challengeBtn.textContent = "⏳ Lancement...";
+            await challengeFriend(pseudo, friendId);
+        });
 
         const deleteBtn = friendRow.querySelector(".delete-friend-btn");
         deleteBtn.addEventListener("click", async () => {

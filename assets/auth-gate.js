@@ -1,5 +1,5 @@
 (() => {
-    const API_BASE_URL = "https://bstests.leogib.fr";
+    const API_BASE_URL = "http://localhost:3000";
     const USER_ROUTE_BASE = "/user";
     const PRIMARY_TOKEN_KEY = "brainrot_token";
     const TOKEN_STORAGE_KEYS = ["brainrot_token", "token", "auth_token", "jwt_token", "jwt"];

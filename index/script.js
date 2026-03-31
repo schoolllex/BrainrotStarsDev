@@ -1,5 +1,5 @@
 const App = {
-    apiBaseUrl: "https://bstests.leogib.fr",
+    apiBaseUrl: "http://localhost:3000",
     userRouteBases: ["/user"],
     goldSyncIntervalMs: 5 * 60 * 1000,
     state: {
@@ -162,17 +162,49 @@ const App = {
     },
 
     bindEvents() {
-        const playBtn = document.querySelector('.btn-play');
-        if (playBtn) {
-            playBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                alert("Fonctionnalité non disponible pour le moment.");
-            });
-        }
-
         if (this.ui.mainBtn) {
-            this.ui.mainBtn.addEventListener('click', () => {
-                alert("Matchmaking en cours...");
+            this.ui.mainBtn.addEventListener('click', async () => {
+                const originalText = this.ui.mainBtn.textContent;
+                
+                try {
+                    this.ui.mainBtn.disabled = true;
+                    this.ui.mainBtn.textContent = '🔍 Recherche en cours...';
+                    this.ui.mainBtn.style.opacity = '0.6';
+                    
+                    // Appel au serveur pour chercher un match
+                    const token = await window.BrainrotAuth.waitUntilReady();
+                    if (!token) {
+                        throw new Error('Non authentifié');
+                    }
+
+                    const response = await fetch('http://localhost:3000/game/find-match', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Erreur serveur');
+                    }
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Tu peux aussi afficher une notification
+                        console.log('Matchmaking en cours... Code:', data.matchCode);
+                    } else {
+                        throw new Error(data.message || 'Erreur');
+                    }
+                } catch (error) {
+                    console.error('Erreur matchmaking:', error);
+                    alert('❌ Erreur: ' + error.message);
+                    this.ui.mainBtn.textContent = originalText;
+                    this.ui.mainBtn.disabled = false;
+                    this.ui.mainBtn.style.opacity = '1';
+                }
             });
         }
 
@@ -234,4 +266,78 @@ const App = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => App.init());
+const joinMatch = async (matchCode) => {
+  const originalBtnState = {
+    text: App.ui.mainBtn?.textContent,
+    disabled: App.ui.mainBtn?.disabled
+  };
+
+  try {
+    const token = await window.BrainrotAuth.waitUntilReady();
+    if (!token) {
+      throw new Error('Non authentifié');
+    }
+
+    if (App.ui.mainBtn) {
+      App.ui.mainBtn.disabled = true;
+      App.ui.mainBtn.textContent = '⏳ Connexion au match...';
+      App.ui.mainBtn.style.opacity = '0.5';
+    }
+
+    console.log(`Tentative de connexion au match: ${matchCode}`);
+
+    // Appel à l'API pour joindre la room
+    const response = await fetch('http://localhost:3000/game/join', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        roomId: matchCode,
+        name: localStorage.getItem('playerName') || 'Player',
+        playerId: localStorage.getItem('playerId') || null
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    // Sauvegarder les infos du match
+    const playerId = data.playerId;
+    localStorage.setItem('playerId', playerId);
+    localStorage.setItem('currentMatchCode', matchCode);
+
+    console.log('✅ Connecté au match avec ID:', playerId);
+
+    setTimeout(() => {
+      window.location.href = `../game/game.html?room=${matchCode}`;
+    }, 500);
+
+  } catch (error) {
+    console.error('❌ Erreur join match:', error);
+    
+    // Restaurer le bouton
+    if (App.ui.mainBtn && originalBtnState) {
+      App.ui.mainBtn.textContent = originalBtnState.text;
+      App.ui.mainBtn.disabled = originalBtnState.disabled;
+      App.ui.mainBtn.style.opacity = '1';
+    }
+
+    alert(`❌ Impossible de joindre le match: ${error.message}`);
+    return false;
+  }
+};
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  App.init();
+});

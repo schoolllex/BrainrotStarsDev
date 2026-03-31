@@ -1,13 +1,3 @@
-/**
- * rebirth-reveal.js — BrainrotStars
- * Affiche l'animation de reveal v1.1.0 une seule fois par navigateur.
- * À inclure en bas de chaque page HTML :
- *   <script src="../assets/rebirth-reveal.js"></script>
- *
- * Condition : si l'utilisateur n'a pas encore le flag "has_animation" en localStorage,
- * l'animation se lance. Une fois fermée, le flag est posé.
- */
-
 (function () {
     "use strict";
 
@@ -15,9 +5,6 @@
 
     if (localStorage.getItem(FLAG_KEY)) return;
 
-    /* ─────────────────────────────────────────────
-       STYLES INJECTÉS
-    ───────────────────────────────────────────── */
     const style = document.createElement("style");
     style.textContent = `
         #brainrot-reveal-overlay {
@@ -80,6 +67,9 @@
             text-align: center;
             perspective: 1000px;
             padding: 1rem;
+            width: 100%;
+            max-width: 540px;
+            box-sizing: border-box;
         }
 
         #brainrot-reveal-overlay .br-tag {
@@ -118,20 +108,21 @@
         }
 
         #brainrot-reveal-overlay .br-grid {
-            display: flex;
-            gap: 1rem;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
             justify-content: center;
             margin-top: 1rem;
-            flex-wrap: wrap;
+            width: 100%;
+            max-width: 480px;
         }
 
         #brainrot-reveal-overlay .br-card {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(168, 85, 247, 0.3);
             backdrop-filter: blur(15px);
-            padding: 1.25rem;
-            border-radius: 20px;
-            width: 200px;
+            padding: 1rem;
+            border-radius: 16px;
             opacity: 0;
             transform: translateY(50px);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -143,30 +134,37 @@
         #brainrot-reveal-overlay.active .br-card:nth-child(4) { animation: brSlideIn 0.5s 1.6s forwards ease-out; }
 
         #brainrot-reveal-overlay .br-card-emoji {
-            font-size: 1.8rem;
-            margin-bottom: 0.6rem;
+            font-size: 1.5rem;
+            margin-bottom: 0.4rem;
             display: block;
         }
 
         #brainrot-reveal-overlay .br-card h3 {
-            font-size: 0.95rem;
-            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
             color: #a855f7;
             font-weight: 900;
         }
 
         #brainrot-reveal-overlay .br-card p {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #a3a3a3;
             line-height: 1.4;
         }
 
         #brainrot-reveal-overlay .br-btn-row {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             justify-content: center;
             flex-wrap: wrap;
-            margin-top: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        #brainrot-reveal-overlay .br-btn-ready,
+        #brainrot-reveal-overlay .br-btn-link {
+            width: 100%;
+            max-width: 280px;
+            justify-content: center;
         }
 
         #brainrot-reveal-overlay .br-btn-ready {
@@ -251,12 +249,41 @@
             10%, 30%, 50%, 70%, 90% { transform: translate(-4px, -4px); }
             20%, 40%, 60%, 80%      { transform: translate( 4px,  4px); }
         }
+
+        @media (max-width: 480px) {
+            #brainrot-reveal-overlay .br-grid {
+                grid-template-columns: 1fr 1fr;
+                max-width: 100%;
+            }
+
+            #brainrot-reveal-overlay .br-card {
+                padding: 0.75rem;
+                border-radius: 12px;
+            }
+
+            #brainrot-reveal-overlay .br-title {
+                font-size: clamp(1.8rem, 8vw, 3rem);
+                margin-bottom: 1rem;
+            }
+
+            #brainrot-reveal-overlay .br-tag {
+                font-size: 0.75rem;
+                padding: 3px 12px;
+            }
+
+            #brainrot-reveal-overlay .br-btn-ready {
+                padding: 0.85rem 2rem;
+                font-size: 0.95rem;
+            }
+
+            #brainrot-reveal-overlay .br-btn-link {
+                padding: 0.85rem 1.5rem;
+                font-size: 0.85rem;
+            }
+        }
     `;
     document.head.appendChild(style);
 
-    /* ─────────────────────────────────────────────
-       HTML INJECTÉ
-    ───────────────────────────────────────────── */
     const overlay = document.createElement("div");
     overlay.id = "brainrot-reveal-overlay";
     overlay.innerHTML = `
@@ -305,10 +332,6 @@
         </div>
     `;
     document.body.appendChild(overlay);
-
-    /* ─────────────────────────────────────────────
-       CANVAS PARTICULES
-    ───────────────────────────────────────────── */
     const canvas = document.getElementById("br-particles");
     const ctx = canvas.getContext("2d");
     let particles = [];
@@ -346,10 +369,6 @@
         requestAnimationFrame(animateParticles);
     }
     animateParticles();
-
-    /* ─────────────────────────────────────────────
-       LOGIQUE D'AFFICHAGE
-    ───────────────────────────────────────────── */
     function startReveal() {
         const content = document.getElementById("br-content");
         overlay.classList.remove("active");
@@ -372,12 +391,9 @@
     }
 
     document.getElementById("br-close-btn").addEventListener("click", closeReveal);
-
-    // Fermeture en cliquant en dehors du contenu
     overlay.addEventListener("click", function (e) {
         if (e.target === overlay) closeReveal();
     });
 
-    // Lancement automatique
     setTimeout(startReveal, 500);
 })();

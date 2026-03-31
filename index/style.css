@@ -794,3 +794,45 @@ body {
     filter: brightness(1.1);
     box-shadow: 0 14px 28px rgba(168, 85, 247, 0.3);
 }
+
+/* Animations pour les notifications de match */
+@keyframes slideIn {
+    from {
+        transform: translateX(450px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(450px);
+        opacity: 0;
+    }
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 20px 80px rgba(102, 126, 234, 0.5);
+    }
+}
+
+/* Style pour les boutons de notification */
+.notif-btn-accept, .notif-btn-reject {
+    user-select: none;
+    outline: none;
+}
+
+.notif-btn-accept:active, .notif-btn-reject:active {
+    transform: scale(0.95) !important;
+}
