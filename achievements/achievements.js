@@ -95,7 +95,7 @@ function renderCategories(data) {
 async function loadAchievements() {
     GlobalLoader.show();
     try {
-        const response = await fetch("http://localhost:3000/api/achievements");
+        const response = await fetch("https://bstests.leogib.fr/api/achievements");
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         renderCategories(data);

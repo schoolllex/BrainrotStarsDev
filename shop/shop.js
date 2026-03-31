@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://bstests.leogib.fr";
 const SHOP_ROUTE_BASE = "/shop";
 const USER_ROUTE_BASES = ["/user"];
 const GOLD_SYNC_INTERVAL_MS = 5 * 60 * 1000;

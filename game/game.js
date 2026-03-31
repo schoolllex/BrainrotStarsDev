@@ -276,7 +276,7 @@ function startEventSource(roomId){
   if (evtSource) evtSource.close();
   const token = window.BrainrotAuth?.getToken?.() || '';
   evtSource = new EventSource(
-    'http://localhost:3000/game/events?roomId=' + encodeURIComponent(roomId) +
+    'https://bstests.leogib.fr/game/events?roomId=' + encodeURIComponent(roomId) +
     '&playerId=' + encodeURIComponent(localPlayerId || '') +
     '&token=' + encodeURIComponent(token)
   );
@@ -407,7 +407,7 @@ document.getElementById('invite-btn')?.addEventListener('click', async () => {
   try {
     const token = window.BrainrotAuth?.getToken?.() || '';
     if (!token) return;
-    const res = await fetch('http://localhost:3000/user/stats', {
+    const res = await fetch('https://bstests.leogib.fr/user/stats', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!res.ok) return;
@@ -461,7 +461,7 @@ async function playCard(cardId, targetPos){
   if (targetPos) payload.targetPos = targetPos;
   try{
     const token = window.BrainrotAuth?.getToken?.() || '';
-    const res = await fetch('http://localhost:3000/game/play', { method: 'POST', headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${token}`}, body: JSON.stringify(payload) });
+    const res = await fetch('https://bstests.leogib.fr/game/play', { method: 'POST', headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${token}`}, body: JSON.stringify(payload) });
     if (!res.ok){ const err = await res.json().catch(()=>({error:'play failed'})); alert('Play failed: '+(err && err.error?err.error:res.status)); }
   } catch(e){ console.error(e); }
 }
@@ -496,7 +496,7 @@ canvas.addEventListener('click', (ev)=>{ if (!pendingTouchCard) return; const re
 
 async function fetchAvailableCards(userId) {
   try {
-    const res = await fetch('http://localhost:3000/game/available-cards', {
+    const res = await fetch('https://bstests.leogib.fr/game/available-cards', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId })
@@ -647,7 +647,7 @@ function updateDeckCounter() {
 async function showDeckSelector() {
   let fetchedCards = [];
   try {
-    const url = 'http://localhost:3000/game/getCard';
+    const url = 'https://bstests.leogib.fr/game/getCard';
     const res = await fetch(url, { method: 'GET' });
     if (res.ok) {
       const data = await res.json();
@@ -703,7 +703,7 @@ document.getElementById('confirm-deck').addEventListener('click', async () => {
 
   try {
     const token = window.BrainrotAuth?.getToken?.() || '';
-    const res = await fetch('http://localhost:3000/game/join', {
+    const res = await fetch('https://bstests.leogib.fr/game/join', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -730,7 +730,7 @@ document.getElementById('confirm-deck').addEventListener('click', async () => {
     currentRoom = data.room;
     
     // Marquer le deck comme ready pour ce joueur
-    const acceptRes = await fetch('http://localhost:3000/game/accept-invitation', {
+    const acceptRes = await fetch('https://bstests.leogib.fr/game/accept-invitation', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -807,7 +807,7 @@ async function handleAcceptInvitation(joinData) {
   
   try {
     const token = window.BrainrotAuth?.getToken?.() || '';
-    const res = await fetch('http://localhost:3000/game/accept-invitation', {
+    const res = await fetch('https://bstests.leogib.fr/game/accept-invitation', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -838,7 +838,7 @@ async function handleAcceptInvitation(joinData) {
 async function handleRejectInvitation(joinData) {
   try {
     const token = window.BrainrotAuth?.getToken?.() || '';
-    await fetch('http://localhost:3000/game/reject-invitation', {
+    await fetch('https://bstests.leogib.fr/game/reject-invitation', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

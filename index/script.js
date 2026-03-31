@@ -1,5 +1,5 @@
 const App = {
-    apiBaseUrl: "http://localhost:3000",
+    apiBaseUrl: "https://bstests.leogib.fr",
     userRouteBases: ["/user"],
     goldSyncIntervalMs: 5 * 60 * 1000,
     state: {
@@ -177,7 +177,7 @@ const App = {
                         throw new Error('Non authentifié');
                     }
 
-                    const response = await fetch('http://localhost:3000/game/find-match', {
+                    const response = await fetch('https://bstests.leogib.fr/game/find-match', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -287,7 +287,7 @@ const joinMatch = async (matchCode) => {
     console.log(`Tentative de connexion au match: ${matchCode}`);
 
     // Appel à l'API pour joindre la room
-    const response = await fetch('http://localhost:3000/game/join', {
+    const response = await fetch('https://bstests.leogib.fr/game/join', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

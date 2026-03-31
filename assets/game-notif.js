@@ -240,7 +240,7 @@
           window.location.href = `${window.location.origin}/frontend/game/game.html?room=${encodeURIComponent(code)}`;
           return;
         }
-        const res = await fetch('http://localhost:3000/game/join', {
+        const res = await fetch('https://bstests.leogib.fr/game/join', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -271,7 +271,7 @@
       try {
         const token = await window.BrainrotAuth.waitUntilReady().catch(() => null);
         if (token) {
-          await fetch('http://localhost:3000/game/refuse-match', {
+          await fetch('https://bstests.leogib.fr/game/refuse-match', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -321,7 +321,7 @@
         eventSource = null;
       }
 
-      eventSource = new EventSource('http://localhost:3000/event/subscribe?token=' + encodeURIComponent(token));
+      eventSource = new EventSource('https://bstests.leogib.fr/event/subscribe?token=' + encodeURIComponent(token));
 
       eventSource.onopen = () => {
         console.log('[GameNotif] ✅ Connexion SSE établie');
