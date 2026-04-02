@@ -664,6 +664,11 @@ function renderRoom(room){
     c.addEventListener('pointerdown', (ev)=>{
       if (!affordable) return;
       
+      // Prevent default behavior for touch devices
+      if (ev.pointerType === 'touch') {
+        ev.preventDefault();
+      }
+      
       if (isTouchControlMode) {
         if (selectedCardForPlacement === card.id) {
           selectedCardForPlacement = null;
@@ -685,7 +690,7 @@ function renderRoom(room){
         draggingEmoji = card.emoji || '❓';
         dragPos = { x: ev.clientX, y: ev.clientY };
       }
-    });
+    }, { passive: false });
     
     c.ondragstart = (ev)=>ev.preventDefault();
     
@@ -1165,15 +1170,35 @@ async function handleRejectInvitation(joinData) {
   }
 }
 
-// Touch mode: canvas click handler for card placement
-canvas.addEventListener('click', async (ev) => {
+// Touch mode: canvas click/touch handler for card placement
+function handleCanvasPlacement(ev) {
   if (!isTouchControlMode || !selectedCardForPlacement || !currentRoom) return;
+  
+  // Prevent default for touchend to avoid double-clicks
+  if (ev.type === 'touchend') {
+    ev.preventDefault();
+  }
   
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;
-  const x = (ev.clientX - rect.left) * scaleX;
-  const y = (ev.clientY - rect.top) * scaleY;
+  
+  // Get position from either mouse or touch event
+  let clientX, clientY;
+  if (ev.touches && ev.touches.length > 0) {
+    clientX = ev.touches[0].clientX;
+    clientY = ev.touches[0].clientY;
+  } else if (ev.changedTouches && ev.changedTouches.length > 0) {
+    // For touchend, use changedTouches
+    clientX = ev.changedTouches[0].clientX;
+    clientY = ev.changedTouches[0].clientY;
+  } else {
+    clientX = ev.clientX;
+    clientY = ev.clientY;
+  }
+  
+  const x = (clientX - rect.left) * scaleX;
+  const y = (clientY - rect.top) * scaleY;
   
   const cardId = selectedCardForPlacement;
   
@@ -1185,5 +1210,8 @@ canvas.addEventListener('click', async (ev) => {
   });
   
   // Play card at clicked position (async, but don't wait for response)
-  await playCard(cardId, { x: Math.round(x), y: Math.round(y) });
-});
+  playCard(cardId, { x: Math.round(x), y: Math.round(y) }).catch(err => console.error('Play card error:', err));
+}
+
+canvas.addEventListener('click', handleCanvasPlacement);
+canvas.addEventListener('touchend', handleCanvasPlacement, { passive: false });
