@@ -139,11 +139,12 @@ async function tryOpenChestApiForQty(itemId, qty) {
                 })
             });
             if (!response.ok){
-              return alert("Erreur lors de l'ouverture");
+              const errorData = await response.json().catch(() => ({}));
+              return alert(errorData?.message || "Erreur lors de l'ouverture");
             };
             const payload = await response.json();
             if (!payload?.success){
-              return alert("Erreur lors de l'ouverture");
+              return alert(payload?.message || "Erreur lors de l'ouverture");
             };
             const chests = Array.isArray(payload?.chests) ? payload.chests : [];
             const opened = chests.length || safeQty;

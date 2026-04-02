@@ -72,20 +72,11 @@
                     <span class="nav-badge hidden" id="bp-notif-badge"></span>
                 </a>
 
-                <a href="../ah/ah.html" class="btn-card green wide nav-link">
-                    <span class="btn-emoji">🛒</span>
-                    <span>Marché des Brainrot</span>
-                </a>
-
                 <button id="btn-token" class="btn-card teal wide" type="button">
-                    <i data-lucide="key-round"></i>
-                    <span>Mon token de connexion</span>
+                    <i data-lucide="user"></i>
+                    <span>Mon compte</span>
                 </button>
 
-                <a href="../achievements/achievements.html" id="btn-achievements" class="btn-card yellow wide nav-link">
-                    <i data-lucide="medal"></i>
-                    <span>Achievements</span>
-                </a>
             </div>
 
             <section class="economy-grid">
@@ -117,27 +108,21 @@
                     <span class="stat-number" id="val-brainrots">14 420/69 000</span>
                 </div>
 
-                <div class="stat-row">
-                    <div class="stat-info">
-                        <div class="icon-wrapper purple"><i data-lucide="trophy"></i></div>
-                        <span>Achievements</span>
-                    </div>
-                    <span class="stat-number" id="val-achievements">Non disponible</span>
-                </div>
             </section>
         </main>
     </div>
 
     <div id="token-modal-overlay" class="token-modal-overlay hidden" role="dialog" aria-modal="true">
         <div class="token-modal-card">
-            <div class="token-modal-icon">🔑</div>
-            <h2 class="token-modal-title">Mon token de connexion</h2>
+            <div class="token-modal-icon">👤</div>
+            <h2 class="token-modal-title">Mon compte</h2>
             <p class="token-modal-warning">⚠️ Ne le diffuse jamais — quiconque possède ce token peut accéder à ton compte.</p>
             <div class="token-modal-value-wrap">
                 <div id="token-modal-value" class="token-modal-value">Chargement...</div>
                 <button id="token-modal-copy" class="token-modal-copy-btn" type="button">Copier</button>
             </div>
             <p class="token-modal-tip">Garde-le bien au chaud, c'est ta seule façon de te reconnecter sur un nouvel appareil.</p>
+            <button id="token-modal-logout" class="token-modal-logout-btn" type="button">Se déconnecter</button>
             <button id="token-modal-close" class="token-modal-close-btn" type="button">Fermer</button>
             <p id="token-modal-feedback" class="token-modal-feedback"></p>
         </div>

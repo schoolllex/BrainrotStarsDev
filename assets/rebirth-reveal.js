@@ -1,9 +1,16 @@
 (function () {
     "use strict";
 
-    const FLAG_KEY = "has_animation";
+    const OLD_FLAG_KEY = "brainrot_beta_tester_modal_shown";
+    const NEW_FLAG_KEY = "has_seen_v2_animation";
 
-    if (localStorage.getItem(FLAG_KEY)) return;
+    // Si la V2 a déjà été vue, ne rien afficher
+    if (localStorage.getItem(NEW_FLAG_KEY)) return;
+    
+    // Supprimer l'ancien flag s'il existe
+    if (localStorage.getItem(OLD_FLAG_KEY)) {
+        localStorage.removeItem(OLD_FLAG_KEY);
+    }
 
     const style = document.createElement("style");
     style.textContent = `
@@ -34,7 +41,7 @@
             background: repeating-conic-gradient(
                 from 0deg,
                 transparent 0deg 10deg,
-                rgba(168, 85, 247, 0.08) 10deg 20deg
+                rgba(249, 115, 22, 0.08) 10deg 20deg
             );
             animation: brRotateSun 30s linear infinite;
             pointer-events: none;
@@ -44,7 +51,7 @@
             position: absolute;
             width: 100%;
             height: 200px;
-            background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.6), transparent);
+            background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.6), transparent);
             transform: rotate(-45deg) translateY(-500px);
             filter: blur(50px);
             opacity: 0.5;
@@ -73,7 +80,7 @@
         }
 
         #brainrot-reveal-overlay .br-tag {
-            background: #a855f7;
+            background: #f97316;
             color: white;
             padding: 4px 16px;
             border-radius: 99px;
@@ -119,7 +126,7 @@
 
         #brainrot-reveal-overlay .br-card {
             background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(168, 85, 247, 0.3);
+            border: 1px solid rgba(249, 115, 22, 0.3);
             backdrop-filter: blur(15px);
             padding: 1rem;
             border-radius: 16px;
@@ -142,7 +149,7 @@
         #brainrot-reveal-overlay .br-card h3 {
             font-size: 0.85rem;
             margin-bottom: 0.3rem;
-            color: #a855f7;
+            color: #fb923c;
             font-weight: 900;
         }
 
@@ -194,8 +201,8 @@
 
         #brainrot-reveal-overlay .br-btn-link {
             background: transparent;
-            color: #a855f7;
-            border: 2px solid rgba(168, 85, 247, 0.5);
+            color: #fb923c;
+            border: 2px solid rgba(249, 115, 22, 0.5);
             padding: 1rem 2rem;
             font-size: 1rem;
             font-weight: 700;
@@ -217,8 +224,8 @@
         }
 
         #brainrot-reveal-overlay .br-btn-link:hover {
-            background: rgba(168, 85, 247, 0.15);
-            border-color: #a855f7;
+            background: rgba(249, 115, 22, 0.15);
+            border-color: #f97316;
         }
 
         #brainrot-reveal-overlay .br-shake {
@@ -292,29 +299,29 @@
         <canvas id="br-particles"></canvas>
 
         <div class="br-content" id="br-content">
-            <span class="br-tag">Mise à jour v1.1.0</span>
-            <h1 class="br-title">SYSTÈME DE<br><span style="color:#a855f7">REBIRTH</span></h1>
+            <span class="br-tag">Mise à jour v2.0.0</span>
+            <h1 class="br-title">La saison<br><span style="color:#fb923c">V2 est là !</span></h1>
 
             <div class="br-grid">
                 <div class="br-card">
                     <span class="br-card-emoji">🌀</span>
-                    <h3>Le Sacrifice</h3>
-                    <p>Réinitialise ton Gold et tes Upgrades pour monter en grade.</p>
+                    <h3>Multijoueur</h3>
+                    <p>Nouveau mode multijoueur.</p>
                 </div>
                 <div class="br-card">
                     <span class="br-card-emoji">⚡</span>
-                    <h3>Puissance +10%</h3>
-                    <p>Chaque Rebirth t'offre un bonus de multiplicateur permanent.</p>
+                    <h3>Reset global</h3>
+                    <p>Reset des cartes de saison.</p>
                 </div>
                 <div class="br-card">
                     <span class="br-card-emoji">💰</span>
-                    <h3>Gold au Retour</h3>
-                    <p>À chaque Rebirth, tu récupères un capital de départ selon ton rang — plus tu montes, plus tu repartes riche.</p>
+                    <h3>Système de saison</h3>
+                    <p>Nouvelles cartes saisonières.</p>
                 </div>
                 <div class="br-card">
                     <span class="br-card-emoji">📦</span>
-                    <h3>Caisses Offertes</h3>
-                    <p>Chaque Rebirth te récompense avec des caisses Épiques et Mythiques selon ton niveau de rebirth.</p>
+                    <h3>Futurs événements</h3>
+                    <p>Plein de futur event communautaire à venir !</p>
                 </div>
             </div>
 
@@ -322,7 +329,7 @@
                 <button class="br-btn-ready" id="br-close-btn">C'EST COMPRIS !</button>
                 <a
                     class="br-btn-link"
-                    href="https://schoolllex.github.io/BrainrotStars/rebirth/rebirth.html"
+                    href="https://schoolllex.github.io/BrainrotStars/game/game.html"
                     target="_blank"
                     rel="noopener"
                 >
@@ -354,7 +361,7 @@
         }
         update() { this.y -= this.speed; if (this.y < 0) this.reset(); }
         draw() {
-            ctx.fillStyle = `rgba(168, 85, 247, ${this.alpha})`;
+            ctx.fillStyle = `rgba(251, 146, 60, ${this.alpha})`;
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
             ctx.fill();
@@ -369,6 +376,7 @@
         requestAnimationFrame(animateParticles);
     }
     animateParticles();
+    
     function startReveal() {
         const content = document.getElementById("br-content");
         overlay.classList.remove("active");
@@ -386,7 +394,11 @@
             overlay.classList.remove("active");
             overlay.style.opacity = "";
             overlay.style.display = "none";
-            localStorage.setItem(FLAG_KEY, "1");
+            // Sauvegarder le nouveau flag et supprimer l'ancien
+            localStorage.setItem(NEW_FLAG_KEY, "1");
+            if (localStorage.getItem(OLD_FLAG_KEY)) {
+                localStorage.removeItem(OLD_FLAG_KEY);
+            }
         }, 500);
     }
 

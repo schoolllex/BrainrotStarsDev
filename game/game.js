@@ -21,8 +21,158 @@ let selectedDeck = [];
 let currentRoomId = null;
 let isInvitationAccepted = false;
 let isInvitationWaiting = false;
+let isTouchControlMode = true;
+let selectedCardForPlacement = null;
 
-function showGameEndedOverlay(winnerId, winnerName){
+
+
+
+// Visual and audio effects for card selection
+function playCardSelectEffect() {
+  // Create particle effect around the card
+  createCardParticles(event?.target, 'select');
+  
+  // Play subtle select sound using Web Audio API
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioContext.currentTime;
+    
+    // High-pitched beep for selection
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+    
+    osc.start(now);
+    osc.stop(now + 0.15);
+  } catch (e) {
+    // Audio context not available, continue without sound
+  }
+}
+
+function playCardDeselectEffect() {
+  // Create particle effect
+  createCardParticles(event?.target, 'deselect');
+  
+  // Play subtle deselect sound
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioContext.currentTime;
+    
+    // Lower-pitched beep for deselection
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    
+    osc.frequency.setValueAtTime(600, now);
+    osc.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+    
+    osc.start(now);
+    osc.stop(now + 0.12);
+  } catch (e) {
+    // Audio context not available
+  }
+}
+
+function createCardParticles(element, type) {
+  if (!element) return;
+  
+  const rect = element.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  // Create 6-8 particles
+  const particleCount = type === 'select' ? 8 : 5;
+  for (let i = 0; i < particleCount; i++) {
+    const particle = document.createElement('div');
+    particle.style.cssText = `
+      position: fixed;
+      left: ${centerX}px;
+      top: ${centerY}px;
+      pointer-events: none;
+      z-index: 1000;
+      font-size: 1.2rem;
+      font-weight: bold;
+    `;
+    
+    if (type === 'select') {
+      particle.textContent = '✨';
+      particle.style.animation = `particleFloat${Math.random() > 0.5 ? '1' : '2'} 0.8s ease-out forwards`;
+    } else {
+      particle.textContent = '💨';
+      particle.style.animation = `particleFloat${Math.random() > 0.5 ? '3' : '4'} 0.6s ease-out forwards`;
+    }
+    
+    document.body.appendChild(particle);
+    
+    // Remove particle after animation
+    setTimeout(() => particle.remove(), 800);
+  }
+}
+
+// Add particle animations to CSS dynamically
+function initParticleAnimations() {
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes particleFloat1 {
+      0% {
+        transform: translate(0, 0) scale(1) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(30px, -50px) scale(0.5) rotate(360deg);
+        opacity: 0;
+      }
+    }
+    
+    @keyframes particleFloat2 {
+      0% {
+        transform: translate(0, 0) scale(1) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-30px, -50px) scale(0.5) rotate(-360deg);
+        opacity: 0;
+      }
+    }
+    
+    @keyframes particleFloat3 {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(20px, -40px) scale(0.3);
+        opacity: 0;
+      }
+    }
+    
+    @keyframes particleFloat4 {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-20px, -40px) scale(0.3);
+        opacity: 0;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// Initialize animations on load
+initParticleAnimations();
+
+function showGameEndedOverlay(winnerId, winnerName, rewards = null){
   const isWinner = winnerId === localPlayerId;
   const overlay = document.createElement('div');
   overlay.className = 'game-end-overlay';
@@ -30,8 +180,57 @@ function showGameEndedOverlay(winnerId, winnerName){
   const content = document.createElement('div');
   content.className = 'game-end-card ' + (isWinner ? 'game-end-win' : 'game-end-loss');
 
+  let rewardsHTML = '';
+  if (isWinner && rewards) {
+    rewardsHTML = `
+      <div class="game-end-rewards">
+        <div class="rewards-title">🎁 Récompenses</div>
+        <div class="rewards-grid">
+    `;
+    
+    if (rewards.gold) {
+      rewardsHTML += `
+        <div class="reward-item gold-reward">
+          <div class="reward-icon">💰</div>
+          <div class="reward-amount">${rewards.gold}</div>
+          <div class="reward-label">Or</div>
+        </div>
+      `;
+    }
+    
+    if (rewards.chest) {
+      rewardsHTML += `
+        <div class="reward-item chest-reward">
+          <div class="reward-icon">📦</div>
+          <div class="reward-amount">1</div>
+          <div class="reward-label">Coffre</div>
+        </div>
+      `;
+    }
+    
+    if (rewards.exp) {
+      rewardsHTML += `
+        <div class="reward-item exp-reward">
+          <div class="reward-icon">⭐</div>
+          <div class="reward-amount">+${rewards.exp}</div>
+          <div class="reward-label">Exp</div>
+        </div>
+      `;
+    }
+    
+    rewardsHTML += `
+        </div>
+      </div>
+    `;
+  }
+
   if (isWinner) {
-    content.innerHTML = `<div class="game-end-emoji">🎉</div><div class="game-end-title emerald">VICTOIRE!</div><div class="game-end-sub">Tu as vaincu <strong>${winnerName}</strong></div>`;
+    content.innerHTML = `
+      <div class="game-end-emoji">🎉</div>
+      <div class="game-end-title emerald">VICTOIRE!</div>
+      <div class="game-end-sub">Tu as vaincu <strong>${winnerName}</strong></div>
+      ${rewardsHTML}
+    `;
   } else {
     content.innerHTML = `<div class="game-end-emoji">😢</div><div class="game-end-title" style="color:#ef4444">DÉFAITE</div><div class="game-end-sub"><strong>${winnerName}</strong> a gagné</div>`;
   }
@@ -59,18 +258,25 @@ function handleServerSnapshot(room){
   clientState.target = deepCopy(room); clientState.targetTime = now;
 }
 
-document.addEventListener('pointermove', (ev)=>{ if (!draggingCardId) return; dragPos = { x: ev.clientX, y: ev.clientY }; }, { passive: true });
+document.addEventListener('pointermove', (ev)=>{ 
+  if (!draggingCardId || isTouchControlMode) return; 
+  dragPos = { x: ev.clientX, y: ev.clientY }; 
+}, { passive: true });
+
 document.addEventListener('pointerup', (ev)=>{
   document.body.classList.remove('is-dragging');
-  if (!draggingCardId) return;
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const x = (ev.clientX - rect.left) * scaleX;
-  const y = (ev.clientY - rect.top) * scaleY;
-  const overCanvas = ev.clientX >= rect.left && ev.clientX <= rect.right && ev.clientY >= rect.top && ev.clientY <= rect.bottom;
-  if (overCanvas) playCard(draggingCardId, { x: Math.round(x), y: Math.round(y) }); else playCard(draggingCardId);
-  draggingCardId = null; draggingEmoji = null; dragPos = null; justDragged = true; setTimeout(()=>{ justDragged = false; }, 60);
+  
+  // Souris mode only
+  if (!isTouchControlMode && draggingCardId) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (ev.clientX - rect.left) * scaleX;
+    const y = (ev.clientY - rect.top) * scaleY;
+    const overCanvas = ev.clientX >= rect.left && ev.clientX <= rect.right && ev.clientY >= rect.top && ev.clientY <= rect.bottom;
+    if (overCanvas) playCard(draggingCardId, { x: Math.round(x), y: Math.round(y) }); else playCard(draggingCardId);
+    draggingCardId = null; draggingEmoji = null; dragPos = null; justDragged = true; setTimeout(()=>{ justDragged = false; }, 60);
+  }
 });
 
 let shake = { intensity: 0, duration: 0, start: 0 };
@@ -332,6 +538,7 @@ function startEventSource(roomId){
                   console.log('SSE: Affichage du jeu');
                   invitationModal.style.display = 'none';
                   gameEl.style.display = 'block';
+                  document.body.classList.add('game-active');
                   handleServerSnapshot(currentRoom);
                   renderRoom(currentRoom);
                 }, 600);
@@ -346,7 +553,7 @@ function startEventSource(roomId){
       } else if (data.type === 'playFailed'){ 
         alert('Play failed: ' + (data.payload && data.payload.reason ? data.payload.reason : 'unknown')); 
       } else if (data.type === 'gameEnded'){ 
-        showGameEndedOverlay(data.payload.winnerId, data.payload.winnerName); 
+        showGameEndedOverlay(data.payload.winnerId, data.payload.winnerName, data.payload.rewards); 
         triggerScreenShake(15, 600); 
       } else if (data.type === 'effect'){ 
         if (data.payload && data.payload.effect === 'screenShake'){ 
@@ -436,21 +643,86 @@ function renderRoom(room){
   infoEl.innerHTML = `<span style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Toi</span><br><span style="font-weight:900;font-size:1.1rem;">${me?me.name:''}</span> <span style="color:#ef4444;font-size:0.9rem;">❤️ ${me?me.hp:'-'}</span><div class="mana-bar" style="justify-content:center;margin-top:6px;">${manaPips}</div>`;
 
   handEl.innerHTML = '';
-  if (me){ me.hand.forEach(card=>{ if (!card) return; const c = document.createElement('div'); c.className='btn-card hand-card'; c.dataset.cardId = card.id; c.addEventListener('pointerdown', (ev)=>{ const affordable = (me.mana || 0) >= card.cost; if (!affordable) return; document.body.classList.add('is-dragging'); draggingCardId = card.id; draggingEmoji = card.emoji || '❓'; dragPos = { x: ev.clientX, y: ev.clientY }; }); c.ondragstart = (ev)=>ev.preventDefault(); const affordable = (me.mana || 0) >= card.cost; if (!affordable) c.classList.add('card-unaffordable'); 
-  // Afficher l'image si disponible
-  const cardImage = card.link ? `<img src="${card.link}" style="width:100%; height:100%; object-fit:cover; border-radius:4px; display:block;">` : `<div class="card-emoji">${card.emoji||''}</div>`;
-  c.innerHTML = `<div class="card-cost">${card.cost}</div>${cardImage}<div class="card-name">${card.name}</div>`; 
-  c.onclick = ()=>{ if (affordable && !justDragged) playCard(card.id); }; handEl.appendChild(c); }); }
+  if (me){ 
+    const handCardIds = me.hand.filter(Boolean).map(c => c.id);
+    if (selectedCardForPlacement && !handCardIds.includes(selectedCardForPlacement)) {
+      selectedCardForPlacement = null;
+      canvas.classList.remove('touch-mode-active');
+    }
+    me.hand.forEach(card=>{ 
+    if (!card) return; 
+    const c = document.createElement('div'); 
+    c.className='btn-card hand-card'; 
+    c.dataset.cardId = card.id;
+    const affordable = (me.mana || 0) >= card.cost;
+    if (!affordable) c.classList.add('card-unaffordable');
+    if (selectedCardForPlacement === card.id) {
+      c.classList.add('card-selected');
+      canvas.classList.add('touch-mode-active');
+    }
+    
+    c.addEventListener('pointerdown', (ev)=>{
+      if (!affordable) return;
+      
+      if (isTouchControlMode) {
+        if (selectedCardForPlacement === card.id) {
+          selectedCardForPlacement = null;
+          c.classList.remove('card-selected');
+          canvas.classList.remove('touch-mode-active');
+          playCardDeselectEffect();
+        } else {
+          handEl.querySelectorAll('.hand-card').forEach(el => {
+            el.classList.remove('card-selected');
+          });
+          selectedCardForPlacement = card.id;
+          c.classList.add('card-selected');
+          canvas.classList.add('touch-mode-active');
+          playCardSelectEffect();
+        }
+      } else {
+        document.body.classList.add('is-dragging');
+        draggingCardId = card.id;
+        draggingEmoji = card.emoji || '❓';
+        dragPos = { x: ev.clientX, y: ev.clientY };
+      }
+    });
+    
+    c.ondragstart = (ev)=>ev.preventDefault();
+    
+    // Click handler for non-dragging mode or touch mode
+    c.onclick = ()=>{ 
+      if (affordable && !justDragged && !isTouchControlMode) {
+        // Mouse mode: play card immediately
+        playCard(card.id);
+      }
+    };
+    
+    const cardImage = card.link
+      ? `<img src="${card.link}" style="width:72px; height:72px; object-fit:cover; border-radius:6px; display:block; flex-shrink:0;">`
+      : `<div class="card-emoji">${card.emoji || '❓'}</div>`;
+    const cardName = card.name || card.card?.name || '';
+    c.innerHTML = `<div class="card-cost">${card.cost ?? card.card?.cost ?? 0}</div>${cardImage}<div class="card-name">${cardName}</div>`;
+    handEl.appendChild(c); 
+  }); }
 }
 
 async function playCard(cardId, targetPos){
-  if (!currentRoom) return; if (!localPlayerId) return alert('You must join first');
+  if (!currentRoom) return; 
+  if (!localPlayerId) return alert('You must join first');
+  
+  // Validate card exists in hand
+  const me = currentRoom.players.find(p => p.id === localPlayerId);
+  if (!me) return console.error('Player not found');
+  
+  const card = me.hand.find(c => c.id === cardId);
+  if (!card) return console.error('Card not in hand:', cardId);
+  
+  // Check if affordable
+  const affordable = (me.mana || 0) >= card.cost;
+  if (!affordable) return alert('Pas assez de mana pour cette carte!');
   
   // Validate placement zone for units only
-  const me = currentRoom.players.find(p => p.id === localPlayerId);
-  const card = me?.hand.find(c => c.id === cardId);
-  
-  if (card && card.type === 'unit' && targetPos) {
+  if (card.type === 'unit' && targetPos) {
     if (!isValidPlacement(me, targetPos)) {
       alert('Tu ne peux placer des cartes que sur ta zone de jeu!');
       return;
@@ -461,9 +733,19 @@ async function playCard(cardId, targetPos){
   if (targetPos) payload.targetPos = targetPos;
   try{
     const token = window.BrainrotAuth?.getToken?.() || '';
-    const res = await fetch('https://bstests.leogib.fr/game/play', { method: 'POST', headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${token}`}, body: JSON.stringify(payload) });
-    if (!res.ok){ const err = await res.json().catch(()=>({error:'play failed'})); alert('Play failed: '+(err && err.error?err.error:res.status)); }
-  } catch(e){ console.error(e); }
+    const res = await fetch('https://bstests.leogib.fr/game/play', { 
+      method: 'POST', 
+      headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${token}`}, 
+      body: JSON.stringify(payload) 
+    });
+    if (!res.ok){ 
+      const err = await res.json().catch(()=>({error:'play failed'})); 
+      console.error('Play failed:', err);
+      alert('Play failed: '+(err && err.error?err.error:res.status)); 
+    }
+  } catch(e){ 
+    console.error('Play card error:', e); 
+  }
 }
 
 function isValidPlacement(player, targetPos) {
@@ -489,10 +771,6 @@ function isValidPlacement(player, targetPos) {
          targetPos.y >= validZone.y && 
          targetPos.y < (validZone.y + validZone.h);
 }
-
-let pendingTouchCard = null;
-handEl.addEventListener('click', (ev)=>{ const cardEl = ev.target.closest('.btn-card'); if (!cardEl) return; const id = cardEl.dataset.cardId; if (!id) return; pendingTouchCard = id; });
-canvas.addEventListener('click', (ev)=>{ if (!pendingTouchCard) return; const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; const x = (ev.clientX - rect.left) * scaleX; const y = (ev.clientY - rect.top) * scaleY; playCard(pendingTouchCard, { x: Math.round(x), y: Math.round(y) }); pendingTouchCard = null; });
 
 async function fetchAvailableCards(userId) {
   try {
@@ -550,7 +828,7 @@ function renderDeckSelector(availableCards) {
     const inSaved = savedKeys.includes(key);
 
     // Afficher image si disponible, sinon emoji
-    const cardImage = card.link ? `<img src="${card.link}" style="width:60px; height:60px; object-fit:cover; border-radius:4px; display:block; margin:0 auto;">` : `<div class="card-emoji">${card.emoji || '🃏'}</div>`;
+    const cardImage = card.link ? `<img src="${card.link}" style="width:64px; height:64px; object-fit:cover; border-radius:6px; display:block; margin:0 auto; flex-shrink:0;">` : `<div class="card-emoji">${card.emoji || '🃏'}</div>`;
 
     cardEl.innerHTML = `
       <div class="deck-star" style="display:${inSaved ? 'flex' : 'none'}">⭐</div>
@@ -562,7 +840,7 @@ function renderDeckSelector(availableCards) {
     `;
     
     if (!card.link) {
-      console.warn('Carte sans lien:', card.name, card);
+      console.warn('Carte sans lien:', entry);
     }
 
     const refreshCard = () => {
@@ -628,6 +906,28 @@ function renderDeckSelector(availableCards) {
     };
   }
 
+  const resetBtn = document.getElementById('reset-saved-deck');
+  if (resetBtn) {
+    resetBtn.onclick = () => {
+      if (confirm('⚠️ Êtes-vous sûr de vouloir réinitialiser votre deck sauvegardé ?\n\nCette action est irréversible !')) {
+        saveDeckToStorage([]);
+        updateSavedDeckCount(0);
+        alert('✅ Deck réinitialisé avec succès !');
+        
+        // Décocher toutes les cartes
+        document.querySelectorAll('.deck-card').forEach(el => {
+          const star = el.querySelector('.deck-star');
+          const btn = el.querySelector('.deck-add-btn');
+          if (star) star.style.display = 'none';
+          if (btn) {
+            btn.textContent = '☆ Ajouter au deck';
+            btn.classList.remove('deck-add-btn--remove');
+          }
+        });
+      }
+    };
+  }
+
   updateDeckCounter();
 }
 
@@ -647,8 +947,9 @@ function updateDeckCounter() {
 async function showDeckSelector() {
   let fetchedCards = [];
   try {
+    const token = window.BrainrotAuth?.getToken?.() || '';
     const url = 'https://bstests.leogib.fr/game/getCard';
-    const res = await fetch(url, { method: 'GET' });
+    const res = await fetch(url, { method: 'GET' , headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${token}`},});
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.result)) {
@@ -665,26 +966,32 @@ async function showDeckSelector() {
     console.error('Erreur fetch /game/getCard:', e);
   }
 
-  const normalized = (fetchedCards && fetchedCards.length)
-    ? fetchedCards.map((card, idx) => ({
-        cardId: (card.name ? card.name.replace(/\s+/g, '_') : ('card_' + idx)) + '_' + idx,
-        quantity: 1,
-        card: card
-      }))
-    : [
-      { cardId: '1', quantity: 3, card: { name: 'Fireball', cost: 4, type: 'spell', emoji: '🔥', damage: 5 } },
-      { cardId: '2', quantity: 2, card: { name: 'Meteor', cost: 5, type: 'spell', emoji: '☄️', damage: 7 } },
-      { cardId: '3', quantity: 4, card: { name: 'Bear', cost: 3, type: 'unit', emoji: '🐻', hp: 6, dmg: 2 } },
-      { cardId: '4', quantity: 5, card: { name: 'Goblin', cost: 2, type: 'unit', emoji: '🦊', hp: 3, dmg: 1 } },
-      { cardId: '5', quantity: 3, card: { name: 'Knight', cost: 3, type: 'unit', emoji: '⚔️', hp: 5, dmg: 2 } },
-      { cardId: '6', quantity: 4, card: { name: 'Archer', cost: 2, type: 'unit', emoji: '🏹', hp: 3, dmg: 2 } },
-      { cardId: '7', quantity: 2, card: { name: 'Dragon', cost: 7, type: 'unit', emoji: '🐲', hp: 10, dmg: 4 } },
-      { cardId: '8', quantity: 3, card: { name: 'Mage', cost: 4, type: 'unit', emoji: '🪄', hp: 4, dmg: 3 } },
-      { cardId: '9', quantity: 3, card: { name: 'Bomber', cost: 4, type: 'unit', emoji: '💣', hp: 5, dmg: 4 } },
-      { cardId: '10', quantity: 2, card: { name: 'Frost', cost: 3, type: 'spell', emoji: '❄️', damage: 2 } }
-    ];
+  // Vérifier si l'utilisateur a assez de cartes
+  if (!fetchedCards || fetchedCards.length === 0) {
+    // Pas de cartes du tout
+    alert('❌ Tu n\'as pas de cartes disponibles!\n\nTu dois débloquer au moins 10 cartes avant de jouer.\nRetour à l\'accueil...');
+    window.location.href = '../index/index.html';
+    return;
+  }
+  
+  if (fetchedCards.length < 10) {
+    // Moins de 10 cartes
+    const missing = 10 - fetchedCards.length;
+    alert(`⚠️ Tu n'as que ${fetchedCards.length}/10 cartes!\n\nIl te manque ${missing} carte(s) pour former un deck complet.\n\nDéverrouille plus de cartes et réessaye!`);
+    window.location.href = '../index/index.html';
+    return;
+  }
 
-  console.log('Cartes chargées:', normalized);
+  const normalized = fetchedCards.map((entry, idx) => {
+    const cardData = entry.card || entry;
+    return {
+      cardId: entry.cardId || (cardData.name ? cardData.name.replace(/\s+/g, '_') : ('card_' + idx)) + '_' + idx,
+      deckId: entry.deckId,
+      quantity: entry.quantity || 1,
+      card: cardData
+    };
+  });
+
   selectedDeck = [];
   renderDeckSelector(normalized);
   lobbyEl.style.display = 'none';
@@ -857,3 +1164,26 @@ async function handleRejectInvitation(joinData) {
     console.error('Reject error:', e);
   }
 }
+
+// Touch mode: canvas click handler for card placement
+canvas.addEventListener('click', async (ev) => {
+  if (!isTouchControlMode || !selectedCardForPlacement || !currentRoom) return;
+  
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (ev.clientX - rect.left) * scaleX;
+  const y = (ev.clientY - rect.top) * scaleY;
+  
+  const cardId = selectedCardForPlacement;
+  
+  // Clear selection immediately for UX
+  selectedCardForPlacement = null;
+  canvas.classList.remove('touch-mode-active');
+  handEl.querySelectorAll('.hand-card').forEach(card => {
+    card.classList.remove('card-selected');
+  });
+  
+  // Play card at clicked position (async, but don't wait for response)
+  await playCard(cardId, { x: Math.round(x), y: Math.round(y) });
+});

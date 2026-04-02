@@ -228,6 +228,7 @@ const App = {
         const tokenValue = document.getElementById('token-modal-value');
         const tokenCopy = document.getElementById('token-modal-copy');
         const tokenClose = document.getElementById('token-modal-close');
+        const tokenLogout = document.getElementById('token-modal-logout');
         const tokenFeedback = document.getElementById('token-modal-feedback');
 
         if (tokenBtn && tokenOverlay) {
@@ -242,6 +243,12 @@ const App = {
             tokenClose.addEventListener('click', () => {
                 tokenOverlay.classList.add('hidden');
                 document.body.style.overflow = '';
+            });
+
+            tokenLogout.addEventListener('click', () => {
+                localStorage.removeItem('brainrot_token');
+                localStorage.clear();
+                location.reload();
             });
 
             tokenOverlay.addEventListener('click', (e) => {

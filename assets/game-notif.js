@@ -231,38 +231,12 @@
 
     closeBtn.addEventListener('click', cleanup);
 
-    acceptBtn.addEventListener('click', async () => {
+    acceptBtn.addEventListener('click', () => {
       acceptBtn.disabled = true;
       acceptBtn.textContent = 'Connexion…';
-      try {
-        const token = await window.BrainrotAuth.waitUntilReady().catch(() => null);
-        if (!token) {
-          window.location.href = `${window.location.origin}/frontend/game/game.html?room=${encodeURIComponent(code)}`;
-          return;
-        }
-        const res = await fetch('https://bstests.leogib.fr/game/join', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            roomId: code,
-            name: localStorage.getItem('playerName') || 'Player',
-            playerId: localStorage.getItem('playerId') || null
-          })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (res.ok && data.playerId) {
-          localStorage.setItem('playerId', data.playerId);
-        }
-        window.location.href = `${window.location.origin}/frontend/game/game.html?room=${encodeURIComponent(code)}`;
-        cleanup();
-      } catch (e) {
-        console.error('[GameNotif] Accept error', e);
-        window.location.href = `${window.location.origin}/frontend/game/game.html?room=${encodeURIComponent(code)}`;
-        cleanup();
-      }
+      localStorage.removeItem('playerId');
+      window.location.href = `../../frontend/game/game.html?room=${encodeURIComponent(code)}`;
+      cleanup();
     });
 
     rejectBtn.addEventListener('click', async () => {
@@ -345,7 +319,7 @@
               if (data.roomId) {
                 console.log('[GameNotif] Redirection vers le match...');
                 setTimeout(() => {
-                  window.location.href = `${window.location.origin}/frontend/game/game.html?roomId=${encodeURIComponent(data.roomId)}`;
+                  window.location.href = `../../frontend/game/game.html?room=${encodeURIComponent(data.roomId)}`;
                 }, 1000);
               }
               break;

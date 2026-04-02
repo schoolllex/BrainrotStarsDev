@@ -259,13 +259,22 @@ function renderCollection() {
 
         const cpsTag = document.createElement("div");
         cpsTag.className = "card-cps";
-        cpsTag.innerHTML = `<i data-lucide="coins" style="width: 14px; height: 14px;"></i> ${formatCompact(brainrot.cps)}/s`;
+        
+        const isSeasonal = brainrot.rarity && brainrot.rarity.toLowerCase() === 'seasonial';
+        
+        if (!isSeasonal) {
+            cpsTag.innerHTML = `<i data-lucide="coins" style="width: 14px; height: 14px;"></i> ${formatCompact(brainrot.cps)}/s`;
+        } else {
+            cpsTag.style.display = 'none';
+        }
 
         card.appendChild(levelBadge);
         card.appendChild(img);
         card.appendChild(name);
         card.appendChild(rarityTag);
-        card.appendChild(cpsTag);
+        if (!isSeasonal) {
+            card.appendChild(cpsTag);
+        }
 
         if (!brainrot.isOwned) {
             const lockIcon = document.createElement("div");

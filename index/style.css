@@ -663,6 +663,24 @@ body {
     line-height: 1.4;
 }
 
+.token-modal-logout-btn {
+    width: 100%;
+    border: 1px solid rgba(239, 68, 68, 0.6);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.24), rgba(220, 38, 38, 0.18));
+    color: #fecaca;
+    border-radius: 12px;
+    padding: 0.7rem 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: filter 0.15s ease, border-color 0.15s ease;
+    margin-bottom: 0.7rem;
+}
+
+.token-modal-logout-btn:hover {
+    filter: brightness(1.1);
+    border-color: rgba(239, 68, 68, 0.8);
+}
+
 .token-modal-close-btn {
     width: 100%;
     border: 1px solid rgba(255, 255, 255, 0.15);

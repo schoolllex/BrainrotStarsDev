@@ -28,7 +28,8 @@ function normalizeLeaderboardRows(rows) {
         name: String(entry?.pseudo ?? "Inconnu"),
         cps: Number(entry?.goldPerSec ?? 0),
         money: Number(entry?.gold ?? 0),
-        rebirth: Number(entry?.hasRebirth ?? 0)
+        rebirth: Number(entry?.hasRebirth ?? 0),
+        win: Number(entry?.win ?? 0)
     }));
 }
 
@@ -67,6 +68,7 @@ async function fetchLeaderboard(type, token) {
 function leaderboardTypeFromSort(mode) {
     if (mode === "money") return "gold";
     if (mode === "rebirth") return "rebirth";
+    if (mode === "win") return "win";
     return "coinPerSec";
 }
 
@@ -82,6 +84,8 @@ function sortedLeaderboard(mode) {
         copy.sort((a, b) => b.money - a.money);
     } else if (mode === "rebirth") {
         copy.sort((a, b) => b.rebirth - a.rebirth);
+    } else if (mode === "win") {
+        copy.sort((a, b) => b.win - a.win);
     } else {
         copy.sort((a, b) => b.cps - a.cps || b.money - a.money || a.name.localeCompare(b.name, "fr"));
     }
@@ -107,6 +111,7 @@ function render() {
                     <td class="cps-cell">⚡ ${fmtInt(player.cps)} /s</td>
                     <td class="money-cell">💰 ${fmtInt(player.money)}</td>
                     <td class="rebirth-cell">🔄 ${player.rebirth}</td>
+                    <td class="win-cell">🏆 ${fmtInt(player.win)}</td>
                 </tr>
             `;
         })

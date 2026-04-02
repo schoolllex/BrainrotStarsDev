@@ -184,6 +184,16 @@ body {
     font-weight: 700;
 }
 
+.rebirth-cell {
+    color: #a78bfa;
+    font-weight: 700;
+}
+
+.win-cell {
+    color: #fb923c;
+    font-weight: 700;
+}
+
 .ranking-disclaimer {
     margin-top: 0.9rem;
     font-size: 0.84rem;
