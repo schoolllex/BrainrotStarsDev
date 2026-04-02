@@ -871,9 +871,13 @@ body.is-dragging .hand-card,
   display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 900 / 400;
   background: linear-gradient(180deg, rgba(249,115,22,0.04) 0%, rgba(220,38,38,0.03) 50%, rgba(249,115,22,0.04) 100%);
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #arena::after {
@@ -1309,6 +1313,9 @@ body.is-dragging .hand-card,
 /* Canvas feedback for touch mode */
 canvas.touch-mode-active {
     cursor: crosshair;
+    border: 3px solid #10b981 !important;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.5), inset 0 0 10px rgba(16, 185, 129, 0.2);
+    border-radius: 8px;
 }
 
 /* Navbar disabled during game */
